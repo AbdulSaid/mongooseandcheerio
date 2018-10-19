@@ -29,10 +29,10 @@ app.use(bodyParser.json());
 app.use(express.static('public'));
 
 // Connect to the Mongo DB
-// mongoose.connect(
-//   'mongodb://localhost/article',
-//   { useNewUrlParserl: true }
-// );
+mongoose.connect(
+  'mongodb://localhost/article',
+  { useNewUrlParserl: true }
+);
 
 // Handlebars
 app.engine(
@@ -44,9 +44,17 @@ app.engine(
 app.set('view engine', 'handlebars');
 
 // Routes
-app.get('/', function(req, res) {
-  res.render('index');
-});
+require('./routes/htmlRoutes')(app);
+
+// Connect to the Mongo DB
+// mongoose.connect(
+//   'mongodb://localhost/newyorktimes',
+//   { useNewUrlParser: true }
+// );
+mongoose.connect(
+  'mongodb://localhost/newyorktimes',
+  { useNewUrlParser: true }
+);
 
 app.listen(PORT, function() {
   console.log('App running on port ' + PORT);
