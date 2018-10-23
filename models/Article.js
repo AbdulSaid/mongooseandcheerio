@@ -1,5 +1,6 @@
+// Require mongoose
 var mongoose = require('mongoose');
-
+// Create a Schema
 var Schema = mongoose.Schema;
 
 var ArticleScheme = new Schema({
@@ -19,7 +20,7 @@ var ArticleScheme = new Schema({
     type: Boolean,
     default: false
   },
-  note: {
+  notes: {
     type: Schema.Types.ObjectId,
     ref: 'Note'
   }
