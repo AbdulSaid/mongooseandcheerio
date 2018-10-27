@@ -9,17 +9,17 @@
   <div class="col-md-12">
     {{#if article}}
     {{#each article}}
-    <div class="panel panel-default">
-      <div class="panel-heading">
-        <h4>{{this.title}}</h4>
-      </div>
-      <div class="panel-body">
-        <p> {{this.summary}}</p>
-        <a href={{this.link}} target="_blank">{{this.link}}</a>
-        <br><br>
-        <button type="button" class="btn btn-success addNote" data-toggle="modal" data-target="#noteModal{{this._id}}"
-          data-id={{this._id}}>Add a Note</button>
-        <button type="button" class="btn btn-danger delete" data-id={{this._id}}>Delete</button>
+    <div class="card">
+      <h3 class="card-header">{{this.title}}</h3>
+      <div class="row">
+        <div class="col-lg-8 card-block">
+          <p class="card-text">{{this.summary}}</p>
+          <a href="http://www.bbc.com{{this.link}}" target="_blank" class="card-link">Read more</a>
+        </div>
+        <div class="col-lg-4 align-self-end text-right">
+          <button class="btn btn-danger m-2 btn-remove" data-id="{{this._id}}">Remove</button>
+          <button class="btn btn-success m-2 btn-view-notes" data-id="{{this._id}}">View Comments</button>
+        </div>
       </div>
     </div>
     {{/each}}
@@ -32,8 +32,9 @@
     {{/if}}
   </div>
 </div>
-
-<!--Clicked Notes Modal-->
-{{#each article}}
-{{> notes-modal }}
-{{/each}}
+{{!-- for modal --}}
+<div class="modal fade">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content"></div>
+  </div>
+</div>

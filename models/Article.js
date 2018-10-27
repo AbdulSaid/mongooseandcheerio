@@ -4,26 +4,35 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
 var ArticleScheme = new Schema({
-  headline: {
+  title: {
     type: String,
-    required: true
+    required: false,
+    unique: true
   },
   summary: {
     type: String,
-    required: true
+    required: false,
+    unique: true
   },
-  url: {
+  link: {
     type: String,
-    required: true
+    required: false,
+    unique: true
+  },
+  timestamp: {
+    type: Date,
+    default: Date.now
   },
   saved: {
     type: Boolean,
     default: false
   },
-  notes: {
-    type: Schema.Types.ObjectId,
-    ref: 'Note'
-  }
+  notes: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'Note'
+    }
+  ]
 });
 
 // Creates out model from the above schema, using mongoose's model method

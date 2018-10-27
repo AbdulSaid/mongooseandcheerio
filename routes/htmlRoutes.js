@@ -1,100 +1,204 @@
-// Require in models
-var db = require('../models');
-
-// Our scraping tools
-// Axios is a promised-based http library, similar to jQuery's Ajax method
-// It works on the client and on the server
+// dependencies
 var axios = require('axios');
 var cheerio = require('cheerio');
+var db = require('../models');
 
-var Article = require('../models/Article');
-var Note = require('../models/Note');
-
-module.exports = function(app) {
-  // Routes
-  app.get('/', function(req, res) {
-    Article.find({ saved: false }, function(error, data) {
-      var hbsObject = {
-        article: data
-      };
-    });
-    console.log(hbsObject);
-    res.render('index');
+module.exports = app => {
+  // main page
+  app.get('/', (req, res) => {
+    // look for existing articles in database
+    db.Article.find({})
+      .sort({
+        timestamp: -1
+      })
+      .then(dbArticle => {
+        if (dbArticle.length == 0) {
+          // if no articles found, render index
+          res.render('index');
+        } else {
+          // if there are existing articles, show articles
+          res.redirect('/articles');
+        }
+      })
+      .catch(err => {
+        res.json(err);
+      });
   });
 
-  app.get('/saved', function(req, res) {
-    Article.find({ saved: true })
-      .populate('notes')
-      .exec(function(error, articles) {
-        var hbsObject = {
-          article: articles
+  // saved articles page
+  app.get('/saved', (req, res) => {
+    db.Article.find({
+      saved: true
+    })
+      .then(dbArticle => {
+        var articleObj = {
+          article: dbArticle
         };
-        res.render('saved', hbsObject);
+
+        // render page with articles found
+        res.render('saved', articleObj);
+      })
+      .catch(err => {
+        res.json(err);
       });
   });
 
-  app.get('/scrape', function(req, res) {
-    axios.get('https://www.nytimes.com/').then(function(response) {
-      // Load to cheerio
-      var $ = cheerio.load(response.data);
+  // scrape data then save to mongodb
+  app.get('/scrape', (req, res) => {
+    // get body of url
+    axios
+      .get('http://www.bbc.com/sport/athletics')
+      .then(response => {
+        // use cheerio for shorthand selector $
+        var $ = cheerio.load(response.data);
 
-      $('article').each(function(i, element) {
-        // Save an empty result object
-        var result = {};
+        $('.lakeside__content').each(function(i, element) {
+          var result = {};
+          var title = $(this)
+            .children('h3')
+            .children('a')
+            .children('span')
+            .text();
+          var link = $(this)
+            .children('h3')
+            .children('a')
+            .attr('href');
+          var summary = $(this)
+            .children('p')
+            .text();
 
-        // Add the title and summary of every link, and save them as properties of the result object
-        result.title = $(this)
-          .children('h2')
-          .text();
-        result.summary = $(this)
-          .children('.summary')
-          .text();
-        result.link = $(this)
-          .children('h2')
-          .children('a')
-          .attr('href');
+          result.title = title;
+          result.link = link;
+          result.summary = summary;
 
-        // Using our Article model, create a new entry
-        // This effectively passes the result object to the entry (and the title and link)
-        var entry = new Article(result);
-
-        // Now, save that entry to the db
-        entry.save(function(err, doc) {
-          // Log any errors
-          if (err) {
-            console.log(err);
-          }
-          // Or log the doc
-          else {
-            console.log(doc);
-          }
+          // create new Article
+          db.Article.create(result)
+            .then(dbArticle => {
+              console.log(`\narticle scraped: ${dbArticle}`);
+            })
+            .catch(err => {
+              console.log(`\nerror while saving to database: ${err}`);
+            });
         });
-      });
-      res.send('scrape complete');
-      // Grab every article tag
-      // $('div.css-6p6lnl').each(function(i, element) {
-      //   var result = {};
-      //   var title = $(element)
-      //     .children('a')
-      //     .children('div')
-      //     .children('h2')
-      //     .text();
-      //   var link = $(element)
-      //     .children('a')
-      //     .attr('href');
 
-      //   var summary = $(element)
-      //     .children('a')
-      //     .children('p')
-      //     .text();
-      //   // if sum then push...
-      //   result.push({
-      //     title: title,
-      //     link: link,
-      //     summary: summary
-      //   });
-      //   console.log(result);
-      // });
-    });
+        res.redirect('/articles');
+      })
+      .catch(error => {
+        console.log(`error while getting data from url: ${error}`);
+      });
+  });
+
+  // show articles after scraping
+  app.get('/articles', (req, res) => {
+    db.Article.find({})
+      .sort({
+        timestamp: -1
+      })
+      .then(dbArticle => {
+        var articleObj = {
+          article: dbArticle
+        };
+
+        // render page with articles found
+        res.render('index', articleObj);
+      })
+      .catch(err => {
+        res.json(err);
+      });
+  });
+
+  // save article
+  app.put('/article/:id', (req, res) => {
+    var id = req.params.id;
+
+    db.Article.findByIdAndUpdate(id, {
+      $set: {
+        saved: true
+      }
+    })
+      .then(dbArticle => {
+        res.json(dbArticle);
+      })
+      .catch(err => {
+        res.json(err);
+      });
+  });
+
+  // remove article from page 'saved'
+  app.put('/article/remove/:id', (req, res) => {
+    var id = req.params.id;
+
+    db.Article.findByIdAndUpdate(id, {
+      $set: {
+        saved: false
+      }
+    })
+      .then(dbArticle => {
+        res.json(dbArticle);
+      })
+      .catch(err => {
+        res.json(err);
+      });
+  });
+
+  // get current notes
+  app.get('/article/:id', (req, res) => {
+    var id = req.params.id;
+
+    // cannot get notes associated with article, only the very first one
+    db.Article.findById(id)
+      .populate('note')
+      .then(dbArticle => {
+        res.json(dbArticle);
+      })
+      .catch(err => {
+        res.json(err);
+      });
+  });
+
+  // save new note
+  app.post('/note/:id', (req, res) => {
+    var id = req.params.id;
+
+    db.Note.create(req.body)
+      .then(dbNote => {
+        return db.Article.findOneAndUpdate(
+          {
+            _id: id
+          },
+          {
+            $push: {
+              note: dbNote._id
+            }
+          },
+          {
+            new: true,
+            upsert: true
+          }
+        );
+      })
+      .then(dbArticle => {
+        res.json(dbArticle);
+      })
+      .catch(err => {
+        res.json(err);
+      });
+  });
+
+  // delete note
+  app.delete('/note/:id', (req, res) => {
+    var id = req.params.id;
+
+    db.Note.remove({
+      _id: id
+    })
+      .then(dbNote => {
+        res.json({
+          message: 'note removed!'
+        });
+      })
+      .catch(err => {
+        res.json(err);
+      });
   });
 };
