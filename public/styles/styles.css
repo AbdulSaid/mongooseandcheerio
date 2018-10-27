@@ -1,9 +1,8 @@
 .jumbotron {
-  background-image: url('/images/thenewyorktimes_new.jpg');
+  background-image: url('/images/new-bbc-logo.png');
 }
 
 .pjumbo {
-  color: blue;
   font-size: 30px;
 }
 
