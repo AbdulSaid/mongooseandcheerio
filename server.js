@@ -36,10 +36,11 @@ app.engine(
 app.set('view engine', 'handlebars');
 
 // Connect to the Mongo DB
-mongoose.connect(
-  'mongodb://localhost/newmongoarticle',
-  { useNewUrlParserl: true }
-);
+var MONGODB_URI =
+  process.env.MONGODB_URI || 'mongodb://localhost/newmongoarticle';
+
+mongoose.connect(MONGODB_URI);
+
 var db = mongoose.connection;
 
 //show any mongoose errors
