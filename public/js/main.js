@@ -54,17 +54,19 @@ $(() => {
                   }" class="btn btn-primary btn-save-note">Comment</button>
                   <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
               </div>`);
-
-      var totalNotes = data.note.length;
+      console.log('data', data);
+      var totalNotes = data.notes.length;
+      console.log(totalNotes);
 
       // if there is no note
       if (totalNotes == 0) {
         var message = `<small class="text-muted">This article doesn't have any note yet.</small>`;
         $('.modal-body').prepend(message);
+        console.log('message', message);
       }
       // if there is/are note(s)
       else {
-        var notes = data.note;
+        var notes = data.notes;
         // loop through notes and append to modal
         notes.forEach(note => {
           $('.list-group').append(`
